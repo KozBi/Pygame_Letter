@@ -24,7 +24,4 @@
 - Pygame library
 
 Install with:
-
-```bash
 pip install pygame
-![Press_a_Letter](https://github.com/user-attachments/assets/3ed9f624-40b6-4954-8437-e637ae973324)
