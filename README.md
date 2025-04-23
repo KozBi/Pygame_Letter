@@ -25,4 +25,6 @@
 
 Install with:
 pip install pygame
+
 ![Screenshot](Press_a_Letter.png)
+![Screenshot](Press_a_Letter_1.png)
