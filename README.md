@@ -25,3 +25,4 @@
 
 Install with:
 pip install pygame
+![Screenshot](Press_a_Letter.png)
