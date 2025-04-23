@@ -12,8 +12,6 @@ class Letter(pygame.sprite.Sprite):
         self.font= pygame.font.Font("fonts/LEMONMILK-LightItalic.otf", 30)
         self.color = "black"
         self.y=y
-        self.delete=False
-        self.score=False
 
         self._surface = self.font.render(self._random_letter, True,self.color)
         self.rect = self._surface.get_rect(topleft=(x,y))
@@ -27,13 +25,6 @@ class Letter(pygame.sprite.Sprite):
 
         if self.rect.bottom > 530:
             self._surface = self.font.render(self._random_letter, True,"RED")
-            if self.rect.y > 530: self.delete=True
-
-        else:
-            keys = pygame.key.get_pressed()
-            if keys[pygame.key.key_code(F'{self._random_letter}')]:
-                self.delete=True
-                self.score=True
 
 class Button:
     def __init__(self, text, pos, font, padding=(20, 10), 
@@ -99,10 +90,10 @@ def genere_letter():
                 letters_group.add(Letter(pos_x))
         
 def init_game():
-    global score, start_time, lives
+    global score, start_time, lifes
     score=0
     start_time=(pygame.time.get_ticks())
-    lives=3
+    lifes=3
     letters_group.empty()
 
 pygame.init()
@@ -135,7 +126,7 @@ game_aktive, game_end=False,False
 while True:
 
     #Basic stuff
-    
+    pressed_key_letter = None
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
     for event in pygame.event.get(): #it can be called only once
         if event.type == pygame.QUIT:
@@ -143,6 +134,8 @@ while True:
             exit()
         if game_aktive: #only in game_aktiv mode
             if event.type == letter_timer:genere_letter() #generate Letter 
+        if event.type == pygame.KEYDOWN:
+            pressed_key_letter = pygame.key.name(event.key)
         
         
     #Game Star screen
@@ -167,34 +160,40 @@ while True:
             difficult = 3
         elif current_time < 30000:
             difficult = 4
-        print(difficult)
+        #print(difficult)
 
         if difficult != last_difficult: #logik to triger this only once for performance reasons.
             pygame.time.set_timer(letter_timer, int(1000 / difficult))
             last_difficult = difficult
 
         txt_score = Font1.render((f"Your score: {score}"), True,"black")
-        txt_lives = Font1.render((f"Lives: {lives}"), True,"black")
+        txt_lives = Font1.render((f"Lifes: {lifes}"), True,"black")
 
 
         main_screen.blit(txt_score,(10,550))
         main_screen.blit(txt_lives,(800,550))
         pygame.draw.lines(main_screen, "black",True,[(0, 525),(900, 525)],3)
+ 
 
-        #draw all leters form group in a loop
-        if letters_group:
+        keys = pygame.key.get_pressed()
+         
+        
+        if letters_group :
             for char in letters_group:    
-                if not char.delete:
-                    char.draw(main_screen)
-                    char.update_and_move(2)
-                if char.delete:
-                    if char.score:
-                        score+=1
-                    else:
-                        lives-=1
-                    letters_group.remove(char)
+                char.draw(main_screen)
+                char.update_and_move(2)
+                if keys[pygame.key.key_code(F'{char._random_letter}')] and pressed_key_letter:
+                    char.kill()
+                    score+=1
+                    break
+                elif char.rect.y > 530: 
+                     char.kill()
+                     lifes-=1
+
+
+
         #lose condition
-        if lives <=0: 
+        if lifes <=0: 
             game_end=True
             game_aktive=False
 
@@ -220,5 +219,4 @@ while True:
     pygame.display.update()
 # with this line a code my game is running with 60fps
     clock.tick(60)
-
 
