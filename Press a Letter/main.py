@@ -27,6 +27,9 @@ class Letter(pygame.sprite.Sprite):
             self._surface = self.font.render(self._random_letter, True,"RED")
 
 class Button:
+
+
+
     def __init__(self, text, pos, font, padding=(20, 10), 
                  text_color=(255,255,255), color=("#1E2234"), 
                  hover_color=("#5A669C"), border_color=(255,255,255), 
@@ -75,148 +78,173 @@ class Button:
             else:
                 if self.clicked:
                     return False  # reset click after release
-def genere_letter():
-        if len(letters_group)<=max_let_on_screen:
-            pos_x=random.choice(columns)
-            column_occupied=False
-            if len(letters_group)>0:
-                for L in letters_group:
-                    if L.rect.x == pos_x:
-                        column_occupied=True
-                        break
-                if not column_occupied:
-                    letters_group.add(Letter(pos_x))
-            else:       
-                letters_group.add(Letter(pos_x))
-        
-def init_game():
-    global score, start_time, lifes
-    score=0
-    start_time=(pygame.time.get_ticks())
-    lifes=3
-    letters_group.empty()
 
-pygame.init()
-main_screen = pygame.display.set_mode((900,600))
-screen_rect = main_screen.get_rect()
-main_screen_centrum = screen_rect.center  
-pygame.display.set_caption("Press a Letter:")
-clock =pygame.time.Clock()
+class Game:
+    def __init__(self,width=900,height=600):
 
-Font1 = pygame.font.Font("fonts/LEMONMILK-LightItalic.otf", 20)
-#convert jpg for python to run faster (alpha fill backgrand of the image or smth.)
-grph_background = pygame.image.load("graphics/Background.jpg").convert_alpha()
+        pygame.init()
+        pygame.display.set_caption("Press a Letter:")
 
-#split screen for collumns -> 30 columns 900/30
-columns= [clmn * 30 for clmn in range(30)] #column * 30  column=(0...29) -> 0, 30 ,60, 90
-#Group of letters in special pygame containter class Group
-letters_group= pygame.sprite.Group()
+        self.width=width
+        self.height=height
 
-start_time = 0
+        #config
+        self.max_let_on_screen=50
+        self.columns= [clmn * 30 for clmn in range(30)] #column * 30  column=(0...29) -> 0, 30 ,60, 90 #split screen for collumns -> 30 columns 900/30
+        self.FPS = 60
 
-btn_start_button = Button("Start Game", pos=main_screen_centrum , font=Font1)
-btn_try_again = Button("Try again", pos=(main_screen_centrum[0]-100,main_screen_centrum[1]), font=Font1)
-btn_end = Button("Close Game", pos=(main_screen_centrum[0]+100,main_screen_centrum[1]) , font=Font1)
-max_let_on_screen=50
-letter_timer = pygame.USEREVENT + 1
-last_difficult = 0  
+        self.clock =pygame.time.Clock()
 
-game_start=True
-game_aktive, game_end=False,False
-while True:
+        #init value
+        self.score = 0
+        self.lifes= 3
+        self._start_time = 0
+        self.last_difficult = 0  
+        self._game_mode='START' # can be also # 'PLAY' and 'END'
+        self.difficult =1
 
-    #Basic stuff
-    pressed_key_letter = None
-    current_time = int(pygame.time.get_ticks() / 1000) - start_time
-    for event in pygame.event.get(): #it can be called only once
-        if event.type == pygame.QUIT:
-            pygame.quit() 
-            exit()
-        if game_aktive: #only in game_aktiv mode
-            if event.type == letter_timer:genere_letter() #generate Letter 
-        if event.type == pygame.KEYDOWN:
-            pressed_key_letter = pygame.key.name(event.key)
-        
-        
-    #Game Star screen
-    if game_start:
-        main_screen.blit(grph_background,(0,0))
-        btn_start_button.draw(main_screen)
-        if btn_start_button.is_clicked():
-            game_aktive=True
-            start_time= pygame.time.get_ticks()
-            init_game()
-        
+        self._start_time=(pygame.time.get_ticks())
+        self._letters_group= pygame.sprite.Group() #Group of letters in special pygame containter class Group
 
-    if game_aktive:
-        
-        current_time = (pygame.time.get_ticks()) - start_time
-        main_screen.blit(grph_background,(0,0))
+        #main screen
+        self.main_screen = pygame.display.set_mode((self.width,self.height))
+        self.grph_background = pygame.image.load("graphics/Background.jpg").convert_alpha() #convert jpg for python to run faster (alpha fill backgrand of the image or smth.)  
+        self.screen_rect = self.main_screen.get_rect() 
+        self.main_screen_centrum = self.screen_rect.center 
+
+
+        #used Fonts
+        self.Font1 = pygame.font.Font("fonts/LEMONMILK-LightItalic.otf", 20)
+
+        # define buttons 
+        self.buttons = {"start" : Button("Start Game", pos=self.main_screen_centrum , font=self.Font1),
+                  "again" : Button("Try again", pos=(self.main_screen_centrum[0]-100,self.main_screen_centrum[1]), font=self.Font1),
+                  "close" : Button("Close Game", pos=(self.main_screen_centrum[0]+100,self.main_screen_centrum[1]) , font=self.Font1)}   
+           
+        #timers
+        self.letter_timer = pygame.USEREVENT + 1
+
+    def _genere_letter(self):
+            if len(self._letters_group)<=self.max_let_on_screen:
+                pos_x=random.choice(self.columns)
+                column_occupied=False
+                if len(self._letters_group)>0:
+                    for L in self._letters_group:
+                        if L.rect.x == pos_x:
+                            column_occupied=True
+                            break
+                    if not column_occupied:
+                        self._letters_group.add(Letter(pos_x))
+                else:       
+                    self._letters_group.add(Letter(pos_x))
+    
+    def _init_game(self):
+        self.score = 0
+        self.lifes= 3
+        self._start_time = 0
+        self._letters_group.empty()
+        self._game_mode='PLAY'
+
+    def _start_screen(self):
+        #Game Star screen        
+        self.buttons['start'].draw(self.main_screen)
+        if self.buttons['start'].is_clicked():
+            self._game_mode='PLAY'
+            self.start_time= pygame.time.get_ticks()
+            self._init_game()
+
+    def _game_start(self):
+
+        current_time = (pygame.time.get_ticks()) - self.start_time
         if current_time < 5000:
-            difficult = 1
+            self.difficult = 1
         elif current_time < 10000:
-            difficult = 2
+            self.difficult = 2
         elif current_time < 20000:
-            difficult = 3
-        elif current_time < 30000:
-            difficult = 4
-        #print(difficult)
+            self.difficult = 3
 
-        if difficult != last_difficult: #logik to triger this only once for performance reasons.
-            pygame.time.set_timer(letter_timer, int(1000 / difficult))
-            last_difficult = difficult
+        if self.difficult != self.last_difficult: #logik to triger this only once for performance reasons.
+            pygame.time.set_timer(self.letter_timer, int(1000 / self.difficult))
+            self.last_difficult = self.difficult
 
-        txt_score = Font1.render((f"Your score: {score}"), True,"black")
-        txt_lives = Font1.render((f"Lifes: {lifes}"), True,"black")
+        txt_score = self.Font1.render((f"Your score: {self.score}"), True,"black")
+        txt_lives = self.Font1.render((f"Lifes: {self.lifes}"), True,"black")
 
 
-        main_screen.blit(txt_score,(10,550))
-        main_screen.blit(txt_lives,(800,550))
-        pygame.draw.lines(main_screen, "black",True,[(0, 525),(900, 525)],3)
- 
+        self.main_screen.blit(txt_score,(10,550))
+        self.main_screen.blit(txt_lives,(800,550))
+        pygame.draw.lines(self.main_screen, "black",True,[(0, 525),(900, 525)],3)
 
         keys = pygame.key.get_pressed()
-         
-        
-        if letters_group :
-            for char in letters_group:    
-                char.draw(main_screen)
+        if self._letters_group :
+            for char in self._letters_group:    
+                char.draw(self.main_screen)
                 char.update_and_move(2)
-                if keys[pygame.key.key_code(F'{char._random_letter}')] and pressed_key_letter:
+                if keys[pygame.key.key_code(F'{char._random_letter}')] and self.pressed_key_letter:
                     char.kill()
-                    score+=1
+                    self.score+=1
                     break
                 elif char.rect.y > 530: 
-                     char.kill()
-                     lifes-=1
-
-
-
+                        char.kill()
+                        self.lifes-=1
         #lose condition
-        if lifes <=0: 
-            game_end=True
-            game_aktive=False
+        if self.lifes <=0: 
+            self._game_mode='END'
 
-    if game_end:
-        main_screen.blit(grph_background,(0,0))
-        txt_score1 = Font1.render(("Your games has ended"), True,"black")
-        txt_score2 = Font1.render((f"Your score: {score}"), True,"black")
-        main_screen.blit(txt_score1,(300,200))
-        main_screen.blit(txt_score2,(300,240))
-        btn_try_again.draw(main_screen)
-        btn_end.draw(main_screen)
-
-        if btn_end.is_clicked():             
+    def _game_end(self):
+        self.main_screen.blit(self.grph_background,(0,0))
+        txt_score1 = self.Font1.render(("Your games has ended"), True,"black")
+        txt_score2 = self.Font1.render((f"Your score: {self.score}"), True,"black")
+        self.main_screen.blit(txt_score1,(300,200))
+        self.main_screen.blit(txt_score2,(300,240))
+        self.buttons['again'].draw(self.main_screen)
+        self.buttons['close'].draw(self.main_screen)
+        if self.buttons['close'].is_clicked():             
             pygame.quit() 
             exit()
             pass
-        if btn_try_again.is_clicked():
-            init_game()
-            game_end=False
-            game_aktive=True
+        if self.buttons['again'].is_clicked():
+            self._init_game()
+           # self._game_mode='PLAY'
+            
 
 
-    pygame.display.update()
-# with this line a code my game is running with 60fps
-    clock.tick(60)
+    def _handle_events(self):
+        #Serach for event
+        self.pressed_key_letter = None
+        for event in pygame.event.get(): #it can be called only once
+            if event.type == pygame.QUIT:
+                pygame.quit() 
+                exit()
+            if self._game_mode =='PLAY': #only in game_aktiv mode
+                if event.type == self.letter_timer:self._genere_letter() #generate Letter 
+            if event.type == pygame.KEYDOWN:
+                self.pressed_key_letter = pygame.key.name(event.key)
+
+    def _draw(self):
+        
+        #basic stuff
+        self.main_screen.blit(self.grph_background,(0,0))  
+
+        match self._game_mode:
+           case 'START': self._start_screen()
+           case 'PLAY': self._game_start() 
+           case 'END': self._game_end() 
+
+
+    def run(self):
+
+        while True:
+            self._handle_events()
+            self._draw()
+            self.clock.tick(self.FPS)
+            pygame.display.update()
+
+pygame.init()
+pygame.display.set_caption("Press a Letter:")
+
+game=Game()
+game.run()
+        
+
 
